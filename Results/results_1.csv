@@ -1,0 +1,13 @@
+Nearest Neighbors                             & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 
+Linear SVM                                    & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 &
+Radial-basis function kernel SVM              &  79.05 $\pm$ 1.59 & 100.00 $\pm$ 0.00 &  48.33 $\pm$ 4.00 &  65.09 $\pm$ 3.61 & 
+Radial-basis function kernel Gaussian Process & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 &
+Decision Tree                                 &  98.82 $\pm$ 0.75 &  99.17 $\pm$ 1.14 &  97.92 $\pm$ 1.47 &  98.53 $\pm$ 0.94 & 
+Random Forest                                 &  99.83 $\pm$ 0.38 & 100.00 $\pm$ 0.00 &  99.58 $\pm$ 0.93 &  99.79 $\pm$ 0.47 &
+MLP neural network                            & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 
+AdaBoost                                      &  99.66 $\pm$ 0.46 & 100.00 $\pm$ 0.00 &  99.17 $\pm$ 1.14 &  99.58 $\pm$ 0.58 & 
+Gaussian Naive Bayes                          &  99.66 $\pm$ 0.46 & 100.00 $\pm$ 0.00 &  99.17 $\pm$ 1.14 &  99.58 $\pm$ 0.58 &
+Quadratic Discriminant Analysis               & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 & 100.00 $\pm$ 0.00 &
+Fuzzy Classifier                              &  99.83 $\pm$ 0.37 & 100.00 $\pm$ 0.00 &  99.58 $\pm$ 0.93 &  99.79 $\pm$ 0.47 &
+
+
