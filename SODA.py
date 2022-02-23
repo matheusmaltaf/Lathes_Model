@@ -1,34 +1,115 @@
 import numpy as np
-#from numba import njit
+from numba import njit
 
 # SODA Functions
 
+class ProgBar:
+
+    def __init__(self, n_elements,int_str):
+        
+        import sys
+
+        self.n_elements = n_elements
+        self.progress = 0
+
+        print(int_str)
+
+        # initiallizing progress bar
+
+        info = '{:.2f}% - {:d} of {:d}'.format(0,0,n_elements)
+
+        formated_bar = ' '*int(50)
+
+        sys.stdout.write("\r")
+
+        sys.stdout.write('[%s] %s' % (formated_bar,info))
+
+        sys.stdout.flush()
+
+    def update(self,prog_info=None):
+        
+        import sys
+
+        if prog_info == None:
+
+            self.progress += 1
+
+            percent = (self.progress)/self.n_elements * 100 / 2
+
+            info = '{:.2f}% - {:d} of {:d}'.format(percent*2,self.progress,self.n_elements)
+
+            formated_bar = '-'* int (percent) + ' '*int(50-percent)
+
+            sys.stdout.write("\r")
+
+            sys.stdout.write('[%s] %s' % (formated_bar,info))
+
+            sys.stdout.flush()
+
+
+        else:
+
+            self.progress += 1
+
+            percent = (self.progress)/self.n_elements * 100 / 2
+
+            info = '{:.2f}% - {:d} of {:d} '.format(percent*2,self.progress,self.n_elements) + prog_info
+
+            formated_bar = '-'* int (percent) + ' '*int(50-percent)
+
+            sys.stdout.write("\r")
+
+            sys.stdout.write('[%s] %s' % (formated_bar,info))
+
+            sys.stdout.flush()
+
+@njit(fastmath = True)
 def grid_set(data, N):
     '''
     # Stage 1: Preparation
-
     # --> grid_trad
     # grid_trad it is the mean value of euclidean distance between every data sample pair
     # divided by granularity
-
     # --> grid_angl
     # grid_trad it is the mean value of cosine distance between every data sample pair
     # divided by granularity
     '''
-    _ , W = data.shape
-    AvD1 = data.mean(0)
+    L , W = np.shape(data)
+    
+    AvD1 = np.zeros((W))
+    
+    for i in range(W): AvD1[i] = np.mean(data[:,i])
+
     X1 = np.mean(np.sum(np.power(data,2),axis=1))
+
     grid_trad = np.sqrt(2*(X1 - np.sum(AvD1*AvD1)))/N
+
     Xnorm = np.sqrt(np.sum(np.power(data,2),axis=1))
+
     new_data = data.copy()
+
     for i in range(W):
         new_data[:,i] = new_data[:,i] / Xnorm
-    seq = np.argwhere(np.isnan(new_data))
-    if tuple(seq[::]): new_data[tuple(seq[::])] = 1
-    AvD2 = new_data.mean(0)
+
+    nan_matrix = np.isnan(new_data)
+
+    nan_position = np.argwhere(nan_matrix)
+
+    if len(nan_position)!= 0:
+        for ii in range(len(nan_position)):
+            new_data[nan_position[ii,0],nan_position[ii,1]] = 1
+
+    L2,W2 = np.shape(new_data)
+
+    AvD2 = np.zeros((W2))
+    
+    for i in range(W2): AvD2[i] = np.mean(new_data[:,i])
+
     grid_angl = np.sqrt(1-np.sum(AvD2*AvD2))/N
+
     return X1, AvD1, AvD2, grid_trad, grid_angl
 
+@njit(fastmath = True)
 def pi_calculator(Uniquesample, mode):
     '''
     # Cumulative Proximity in recursive version
@@ -36,30 +117,82 @@ def pi_calculator(Uniquesample, mode):
     '''
     UN, W = Uniquesample.shape
     if mode == 'euclidean':
-        AA1 = Uniquesample.mean(0)
-        X1 = sum(sum(np.power(Uniquesample,2)))/UN
-        DT1 = X1 - sum(np.power(AA1,2))
-        aux = []
-        for i in range(UN): aux.append(AA1)
-        aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
-        uspi = np.sum(np.power(aux2,2),axis=1)+DT1
+        AA1 = np.zeros((W))
+
+        for i in range(W): AA1[i] = np.mean(Uniquesample[:,i])
+
+        u_square = Uniquesample**2
+
+        line_sum = np.zeros(UN)
+
+        for i in range(UN):
+            line_sum[i] = np.sum(u_square[i])
+
+        X1 = np.sum(line_sum)/UN
+
+        DT1 = X1 - np.sum(np.power(AA1,2))
+
+        aux = [AA1 for i in range(UN)]
+
+        #for i in range(UN): 
+        #    aux.append(AA1)
+
+        aux2 = np.zeros(np.shape(Uniquesample))
+
+        for i in range(UN):
+            aux2[i] = Uniquesample[i]-aux[i]
+
+        aux2_square = aux2**2
+
+        uspi = np.sum(aux2_square,axis=1)+DT1
 
     if mode == 'cosine':
-        Xnorm = np.matrix(np.sqrt(np.sum(np.power(Uniquesample,2),axis=1))).T
-        aux2 = Xnorm
-        for i in range(W-1):
-            aux2 = np.insert(aux2,0,Xnorm.T,axis=1)
+        u_2 = Uniquesample**2
+
+        sum_u_2 = np.zeros(UN)
+
+        for i in range(UN):
+            sum_u_2[i] = np.sum(u_2[i,:])
+
+        u_sqrt = sum_u_2**0.5   
+
+        Xnorm = u_sqrt.T
+
+        aux2 = np.zeros((len(Xnorm),W))
+
+        for i in range(W):
+            aux2[:,i] = Xnorm.T
+
         Uniquesample1 = Uniquesample / aux2
-        AA2 = np.mean(Uniquesample1,0)
+
+        _,W2 = np.shape(Uniquesample1)
+
+        AA2 = np.zeros((W2))
+
+        for i in range(W2): AA2[i] = np.mean(Uniquesample1[:,i])
+
         X2 = 1
+
         DT2 = X2 - np.sum(np.power(AA2,2))
+
         aux = []
+
         for i in range(UN): aux.append(AA2)
-        aux2 = [Uniquesample1[i]-aux[i] for i in range(UN)]
-        uspi = np.sum(np.sum(np.power(aux2,2),axis=1),axis=1)+DT2
+
+        aux2 = np.zeros(Uniquesample.shape)
+
+        for i in range(UN):
+            aux2[i] = Uniquesample1[i]-aux[i]
+
+        aux2_2 = aux2**2
+
+        line_sum = np.sum(aux2_2,axis=1)
+
+        uspi = line_sum+DT2
         
     return uspi
 
+#@njit(fastmath = True)
 def Globaldensity_Calculator(Uniquesample, distancetype):
     '''
     # Return:
@@ -87,7 +220,7 @@ def Globaldensity_Calculator(Uniquesample, distancetype):
 
     return GD, Density_1, Density_2, Uniquesample
 
-#@njit(fastmath = True)
+@njit(fastmath = True)
 def hand_dist(XA,XB):   
     '''
     # Euclidean and Cosine distance between one sample (XA) and a set of samples (XB)
@@ -111,7 +244,7 @@ def hand_dist(XA,XB):
     
     return distance
         
-#@njit
+@njit
 def chessboard_division_njit(Uniquesample, MMtypicality, grid_trad, grid_angl, distancetype):
     '''
     # Stage 2: DA Plane Projection
@@ -140,8 +273,8 @@ def chessboard_division_njit(Uniquesample, MMtypicality, grid_trad, grid_angl, d
         
         SQ = []
         # Condition 1
-        for j,d in enumerate(distance):
-            if d[0] < grid_trad and d[1] < grid_angl:
+        for j in range(len(distance)):
+            if distance[j,0] < grid_trad and distance[j,1] < grid_angl:
                 SQ.append(j)
         COUNT = len(SQ)
 
@@ -177,7 +310,7 @@ def chessboard_division_njit(Uniquesample, MMtypicality, grid_trad, grid_angl, d
     BOXMT_new = BOXMT[:contador]
     return BOX_new, BOX_miu_new, BOX_X_new, BOX_S_new, BOXMT_new, NB
 
-#@njit(fastmath = True)
+@njit(fastmath = True)
 def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype):
     '''
     # Stage 3: Itendtifying Focal Points
@@ -191,8 +324,8 @@ def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, dis
         distance = hand_dist(BOX_miu[i,:].reshape(1,-1),BOX_miu)
         seq = []
         # Condition 2
-        for j,(d1,d2) in enumerate(distance):
-            if d1 < n*grid_trad and d2 < n*grid_angl:
+        for j in range(len(distance)):
+            if distance[j,0] < n*grid_trad and distance[j,1] < n*grid_angl:
                 seq.append(j)
         Chessblocak_typicality = [BOXMT[j] for j in seq]
         # Condition 3
@@ -202,7 +335,7 @@ def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, dis
             ModeNumber = ModeNumber + 1
     return Centers, ModeNumber
 
-#@njit(fastmath = True)
+@njit(fastmath = True)
 def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
     '''
     # Stage 4: Forming Data Clouds
@@ -233,17 +366,28 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input):
     N = Input['GridSize']
     distancetype = Input['DistanceType']
 
+    bar = ProgBar(5,'\nExecuting Data Partition...')
+
     X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
+
+    bar.update('  Globaldensity_Calculator')
         
     GD, D1, D2, Uniquesample = Globaldensity_Calculator(data, distancetype)
 
+    bar.update('  chessboard_division_njit')
+
     BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
+
+    bar.update('  ChessBoard_PeakIdentification_njit')
 
     Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
      
+    bar.update('  cloud_member_recruitment_njit')
+
     IDX = cloud_member_recruitment_njit(ModeNumber,np.array(Center),data,grid_trad,grid_angl, distancetype)
            
-        
+    bar.update()
+
     Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
                 'BOX_S': BOX_S,

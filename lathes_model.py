@@ -189,10 +189,11 @@ class LathesModel(object):
 
     def _normalization(self, X, y):
         """ Normalize input data in fit stage """
+        L, W = X.shape
 
-        self.n_timeseries_ = int(X[:,0].max())
         self.n_measures_ = int(X[:,1].max())
-        self.n_sensors_ = int(X.shape[1]-2)
+        self.n_timeseries_ = int(L/self.n_measures_)
+        self.n_sensors_ = int(W-2)
         self.target_ = y[::self.n_measures_]
 
         info = X[:,0:2]
