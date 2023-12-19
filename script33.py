@@ -19,7 +19,7 @@ from sklearn.metrics import balanced_accuracy_score, plot_confusion_matrix
 import matplotlib.pyplot as plt
 
 input_list = np.arange(33)
-TRAIN_PATH = 'Input/train_divisions/'
+TRAIN_PATH = 'Input/train_divisions/division__%i__%i__.pkl'
 TEST_PATH = 'Input/test_divisions/division__%i__%i__.pkl'
 
 gra_list = [1,2,3,4,5,6,7,8,9,10]
@@ -42,27 +42,27 @@ names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
          "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
          "Naive Bayes", "QDA"]
 
-folds = 2
 
 for input_id in input_list:
-    with (open(TRAIN_PATH %input_id, "rb")) as f:
+    print('-----> Input -', input_id, '\n', datetime.now())
+    with (open(TRAIN_PATH %(input_id, input_id), "rb")) as f:
         train_data = pickle.load(f)
-        L1, L2, W = train_data.shape
-        train_data = train_data.reshape(L1*L2, W)
         X_train = train_data[:,:-1]
         y_train = train_data[:,-1]
         del train_data
     
-    with (open(TEST_PATH (%input_id, %input_id), "rb")) as f:
+    with (open(TEST_PATH %(input_id, input_id), "rb")) as f:
         test_data = pickle.load(f)
-        L1, L2, W = test_data.shape
-        test_data = test_data.reshape(L1*L2, W)
+        n_measures = int(np.max(test_data[:,1]))
         X_test = test_data[:,:-1]
         y_test = test_data[:,-1]
-        y_test = y_test[::L2]
+        y_test = y_test[::n_measures]
         del test_data
 
     Classifiers_result = {}
+
+    print('Train: ', X_train.shape)
+    print('Test: ', X_test.shape)
 
     for st in select_list:
         model = LathesModel(N_PCs=4, n_jobs=0)
